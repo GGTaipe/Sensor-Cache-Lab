@@ -2,7 +2,7 @@
 
 Laboratorio de **Spring Boot + caché Caffeine** que mide cuánto tarda leer un gran volumen de registros desde una base de datos frente a leerlos desde memoria.
 
-> **Enlace al repositorio:** https://github.com/TU_USUARIO/sensor-cache-lab  *(reemplazar)*
+> **Enlace al repositorio:** https://github.com/GGTaipe/sensor-cache-lab 
 
 ## ¿Qué se mide?
 
@@ -108,20 +108,25 @@ Para probar la 2: `python dev_server.py --proxy` y abrir `http://localhost:5173/
 
 | Escenario | Registros leídos | BD (mediana) | Caché · 1.er acceso (fallo) | Caché (mediana de aciertos) | Aceleración |
 |---|---|---|---|---|---|
-| Serie de QUITO | 30.000 | ___ ms | ___ ms | ___ ms | ___ × |
-| Reporte mensual global | 360.000 → ~500 | ___ ms | ___ ms | ___ ms | ___ × |
+| Serie de QUITO | 30.000 | 160,3 ms | 274,2 ms | 0,12   ms | 1.359 × |
+| Reporte mensual global | 360.000 → ~500 | 4.8 ms | 0.04 ms | 9.55 ms | 109 × |
 
 Captura de pantalla del duelo: `docs/duelo.png`
 
+<img width="1184" height="602" alt="Captura de pantalla 2026-10-14 202646" src="https://github.com/user-attachments/assets/963baadd-b76e-491a-bf08-c4fcceb71fe7" />
+
+
 ### Qué analizar
 
-- ¿Por qué el primer acceso con caché cuesta lo mismo que la BD (o algo más)?
-- ¿En qué escenario la caché da mayor aceleración y por qué? (pista: qué trabajo se evita en cada caso)
-- Se usa la **mediana** y no solo el promedio: la primera consulta incluye el calentamiento de la JVM y distorsiona la media.
-- H2 corre en el mismo proceso. Con PostgreSQL o MySQL remotos la latencia de red haría la diferencia mucho mayor.
-- Riesgo de la caché: **datos obsoletos**. Aquí caducan por tiempo (`expireAfterWrite`) y se pueden vaciar a mano; con escrituras reales habría que invalidar con `@CacheEvict`.
-- Memoria: una entrada de 30.000 DTOs ocupa varios MB, por eso el límite de entradas.
+### Análisis de mis resultados
 
+Comparando las dos filas puedes responder con datos reales:
+
+-En ambos casos la caché ganó por mucho. La mediana de aciertos fue 0,12 ms en la serie y 0,04 ms en el reporte.
+-La BD tarda mucho más en la serie (160,3 ms) que en el reporte (4,58 ms), así que ahí la caché ahorra más tiempo absoluto.
+-El primer punto de la BD es mucho más lento. En esta gráfica ronda 1000 ms o más, frente a unos 4 ms de las demás repeticiones. Es el calentamiento de la JVM y de la base, por eso se usa la mediana y no el promedio.
+-El fallo de caché cuesta más que una consulta normal (9,55 ms frente a 4,58 ms), porque además de leer de la BD guarda el resultado.
+  
 ## Prompt usado para generar el front con IA
 
 > Genera un front con HTML, CSS y JavaScript sin librerías ni CDN para mi API REST de Spring Boot en `http://localhost:8080`. Endpoints: `GET /api/status`, `GET /api/readings/{station}?mode=db|cache`, `GET /api/report/monthly?mode=db|cache`, `GET /api/lab/duel?scenario=&station=&rounds=`, `GET /api/cache/stats` y `DELETE /api/cache`. Quiero elegir escenario y estación, lanzar consultas individuales y un «duelo», ver tiempo de servidor y de ida y vuelta, un gráfico SVG en escala logarítmica con cada repetición (marcando el primer fallo de caché), la tabla de estadísticas de la caché, un historial y un panel de diagnóstico CORS que indique si front y API comparten origen y si las cabeceras `X-Data-Source` y `Server-Timing` son legibles. Si fetch falla, explica las posibles causas (backend apagado o CORS).
