@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sensor Cache Lab</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="top">
+  <div>
+    <h1>Sensor Cache Lab</h1>
+    <p class="sub">Base de datos vs. caché sobre 360.000 lecturas meteorológicas</p>
+  </div>
+  <div class="pills">
+    <span id="pill-backend" class="pill pill-wait">conectando…</span>
+    <span id="pill-origin" class="pill" title="Origen del front → origen de la API"></span>
+  </div>
+</header>
+
+<main>
+  <div id="banner" class="banner" hidden role="alert"></div>
+
+  <section class="card" aria-labelledby="h-setup">
+    <h2 id="h-setup">1 · Configura el experimento</h2>
+    <div class="grid-form">
+      <fieldset>
+        <legend>Escenario</legend>
+        <label class="radio"><input type="radio" name="scenario" value="readings" checked>
+          <span><b>Serie completa de una estación</b><small>Lee ~30.000 filas y las devuelve al servicio</small></span></label>
+        <label class="radio"><input type="radio" name="scenario" value="report">
+          <span><b>Reporte mensual global</b><small>Agrega las 360.000 filas y devuelve unas 500</small></span></label>
+      </fieldset>
+
+      <div>
+        <label for="station">Estación</label>
+        <select id="station" disabled></select>
+        <label for="rounds" class="gap">Repeticiones del duelo: <output id="rounds-out">6</output></label>
+        <input id="rounds" type="range" min="3" max="15" value="6">
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="btn-db" class="b-db">Leer de la BD</button>
+      <button id="btn-cache" class="b-cache">Leer con caché</button>
+      <button id="btn-duel" class="b-main">⚔ Duelo BD vs caché</button>
+      <button id="btn-clear" class="b-ghost">Vaciar caché</button>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="h-last">
+    <h2 id="h-last">2 · Última consulta</h2>
+    <div class="metrics">
+      <div class="metric"><span class="k">Fuente</span><span id="m-source" class="v">—</span></div>
+      <div class="metric"><span class="k">Tiempo en servidor</span><span id="m-server" class="v">—</span></div>
+      <div class="metric"><span class="k">Ida y vuelta (navegador)</span><span id="m-total" class="v">—</span></div>
+      <div class="metric"><span class="k">Registros leídos</span><span id="m-count" class="v">—</span></div>
+    </div>
+    <p id="headers-note" class="note"></p>
+    <div class="scroll"><table id="preview" class="data" hidden></table></div>
+  </section>
+
+  <section class="card" aria-labelledby="h-duel">
+    <h2 id="h-duel">3 · Resultado del duelo</h2>
+    <p id="duel-empty" class="note">Pulsa «Duelo BD vs caché» para ver la comparación.</p>
+    <div id="duel-box" hidden>
+      <div class="metrics">
+        <div class="metric db"><span class="k">BD · mediana</span><span id="d-db" class="v">—</span></div>
+        <div class="metric cache"><span class="k">Caché · mediana de aciertos</span><span id="d-hit" class="v">—</span></div>
+        <div class="metric"><span class="k">Primer acceso (fallo)</span><span id="d-miss" class="v">—</span></div>
+        <div class="metric big"><span class="k">Aceleración</span><span id="d-speed" class="v">—</span></div>
+      </div>
+      <div id="chart-wrap"></div>
+      <p class="note">Eje vertical en escala logarítmica: cada línea horizontal es 10 veces más tiempo que la anterior.</p>
+    </div>
+  </section>
+
+  <section class="two">
+    <div class="card" aria-labelledby="h-stats">
+      <h2 id="h-stats">Estadísticas de la caché <button id="btn-stats" class="mini">actualizar</button></h2>
+      <table id="stats" class="data"><thead><tr><th>Caché</th><th>Aciertos</th><th>Fallos</th><th>Tasa</th><th>Entradas</th></tr></thead><tbody></tbody></table>
+    </div>
+
+    <div class="card" aria-labelledby="h-cors">
+      <h2 id="h-cors">Diagnóstico CORS</h2>
+      <dl class="kv">
+        <dt>Front</dt><dd id="c-front"></dd>
+        <dt>API</dt><dd id="c-api"></dd>
+        <dt>Mismo origen</dt><dd id="c-same"></dd>
+        <dt>Cabeceras leídas</dt><dd id="c-hdr">—</dd>
+      </dl>
+      <p class="note">Abre este front con <code>?api=</code> (vacío) desde <code>dev_server.py --proxy</code> y el navegador verá un único origen: no habrá CORS.</p>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="h-log">
+    <h2 id="h-log">Historial <button id="btn-log-clear" class="mini">borrar</button></h2>
+    <div class="scroll">
+      <table id="log" class="data">
+        <thead><tr><th>Hora</th><th>Escenario</th><th>Fuente</th><th>Registros</th><th>Servidor</th><th>Total</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
